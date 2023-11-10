@@ -1,0 +1,4 @@
+__pycache__/
+todo.txt 
+*.pyc 
+models/ 
