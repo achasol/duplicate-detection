@@ -10,20 +10,26 @@ from itertools import combinations
 import numpy as np
 from sklearn.decomposition import PCA
 import torch
-
+import os
 
 def tune_sbert_model(run_identifier, train_data):
+
+    #The tuned model is already stored 
+    if os.path.isdir(f"../models/fine-tuned-model-{run_identifier}"):
+        return 
+
     print("Torch version:", torch.__version__)
     print("Is CUDA enabled?", torch.cuda.is_available())
 
     # TODO consider taking a random sample of the training data instead of all combinations
     # See impact on performance currently only using 25% of total training data (increase tuning speed)
-    chosen_samples = np.random.choice(
-        range(len(train_data)), size=(len(train_data) // 4)
-    )
+    # INCREASE TO FULL SAMPLE! (has large impact on quality)
+    #chosen_samples = np.random.choice(
+    #    range(len(train_data)), size=(len(train_data))
+    #)
 
     train_examples = []
-    for product1_index, product2_index in combinations(chosen_samples, 2):
+    for product1_index, product2_index in combinations(range(len(train_data)), 2):
         product1 = train_data.iloc[product1_index]
         product2 = train_data.iloc[product2_index]
         train_examples.append(
@@ -33,7 +39,7 @@ def tune_sbert_model(run_identifier, train_data):
             )
         )
 
-    train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=16)
+    train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=32)
 
     model_id = "sentence-transformers/all-MiniLM-L6-v2"
     model = SentenceTransformer(model_id, device="cuda")
@@ -41,7 +47,7 @@ def tune_sbert_model(run_identifier, train_data):
     train_loss = losses.SoftmaxLoss(
         model=model, sentence_embedding_dimension=384, num_labels=2
     )
-    model.fit(train_objectives=[(train_dataloader, train_loss)], epochs=8)  # Initial 10
+    model.fit(train_objectives=[(train_dataloader, train_loss)], epochs=10)  # Initial 10
 
     model.save(f"../models/fine-tuned-model-{run_identifier}")
 

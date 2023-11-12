@@ -16,9 +16,12 @@ def bootstrap_run(bootstrap_identifier):
         minimal_product_df
     )
 
+    print(total_train_duplicates)
+    print(total_test_duplicates)
+
     print("Fine tuning SBERT model...")
     tune_sbert_model(bootstrap_identifier, train_df)
-    print("Fine tuning SBERT finished Ô£à")
+    print("Fine tuning SBERT finished ✅")
 
     train_product_embeddings = generate_reduced_sbert_embeddings(
         96, train_df["title"], bootstrap_identifier
@@ -26,17 +29,17 @@ def bootstrap_run(bootstrap_identifier):
     test_product_embeddings = generate_reduced_sbert_embeddings(
         96, test_df["title"], bootstrap_identifier
     )
-    print("Reduced sentence embeddings generated Ô£à")
+    print("Reduced sentence embeddings generated ✅")
 
     print("Training catboost model...")
     # Import and train the catboost classifier here
     catboost_model = train_catboost_classifier(train_product_embeddings, train_df)
 
-    print("Catboost model estimated Ô£à")
+    print("Catboost model estimated ✅")
 
     # Random procedure ofcourse values will differ?
-    trial_candidates = range(1, 32)
-    plane_candidates = range(6, 96)
+    trial_candidates = [1,2,4,6,8,12,32,64] #range(1, 32)
+    plane_candidates = [6,9,12,24,32] #range(3, 48)
 
     """
     run_experiment(

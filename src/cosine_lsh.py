@@ -29,6 +29,8 @@ def cosine_locality_sensitive_hash(n_planes, vectors):
 
 
 # Method which iterates over the LSH buckets and uses the classifier to determine which elements are duplicates.
+# TODO bug in the method a product id can be found more than 2 times (multi duplicate!!)
+# Instead add sorted index pair i < j as identifiers to already_found! 
 def detect_duplicates(df, buckets, embeddings, already_found, duplicate_detector):
     true_duplicates = 0
     duplicates_identified = 0
