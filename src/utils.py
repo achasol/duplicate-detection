@@ -3,7 +3,7 @@ import pandas as pd
 import math
 import numpy as np
 from tabulate import tabulate
-
+from sklearn.metrics import f1_score 
 
 # Function to load the product dataset and generate a minimal representation
 def load_dataset():
@@ -46,7 +46,7 @@ def num_duplicates(numbers, df):
 
 # Method used to display the output of the duplicate detection in a suitable way
 def summary(
-    duplicates_found, total_duplicates, comparisons_made, df_size, print_output=True
+    duplicates_found, total_duplicates, comparisons_made, df_size,predictions,true_labels, print_output=True
 ):
     if comparisons_made == 0 or total_duplicates == 0:
         print("No duplicates found")
@@ -54,11 +54,12 @@ def summary(
 
     pair_quality = duplicates_found / comparisons_made
     pair_completeness = duplicates_found / total_duplicates
-    f1score = (
+    f1_star_score = (
         2 * pair_quality * pair_completeness / (pair_quality + pair_completeness)
         if pair_completeness + pair_quality > 0
         else 0
     )
+    f1score = f1_score(true_labels,predictions)
     fraction_comparisons = round(comparisons_made / math.comb(df_size, 2), 6)
     if print_output:
         print(f"Total number of duplicates: {total_duplicates}")
@@ -72,12 +73,14 @@ def summary(
         print(
             f"Pair Completeness: {round(pair_completeness,3)} ({duplicates_found} / {total_duplicates})"
         )
+        print(f"F1*-score: {round(f1_star_score,6)}")
         print(f"F1-score: {round(f1score,6)}")
         print("#" * 36)
     return (
         pair_quality,
         pair_completeness,
-        f1score,
+        f1_star_score,
+        f1score , 
         fraction_comparisons,
     )
 
@@ -109,7 +112,8 @@ def visualize_results(results):
                 "planes",
                 "pair quality",
                 "pair completeness",
-                "f1score",
+                "f1*-score",
+                "f1score"
                 "fraction comparisons",
             ],
             tablefmt="pretty",

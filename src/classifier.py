@@ -26,8 +26,8 @@ def gradient_boosting_catboost() -> cb.CatBoostClassifier:
     clf = cb.CatBoostClassifier(
         **{
             "learning_rate": 0.02,
-            "iterations": 800,
-            "depth": 8,
+            "iterations": 500,
+            "depth": 4,
             "boosting_type": "Plain",
             "l2_leaf_reg": 1e-1,
             "border_count": 128,  # For CPU use 254 (thread blocks)
@@ -36,7 +36,7 @@ def gradient_boosting_catboost() -> cb.CatBoostClassifier:
             "loss_function": "Logloss",
             "eval_metric": "Accuracy",
             "verbose": True,
-            # "task_type": "GPU",
+            "task_type": "GPU",
             "early_stopping_rounds": 100,
         }
     )

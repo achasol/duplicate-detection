@@ -31,7 +31,7 @@ def cosine_locality_sensitive_hash(n_planes, vectors):
 # Method which iterates over the LSH buckets and uses the classifier to determine which elements are duplicates.
 # TODO bug in the method a product id can be found more than 2 times (multi duplicate!!)
 # Instead add sorted index pair i < j as identifiers to already_found! 
-def detect_duplicates(df, buckets, embeddings, already_found, duplicate_detector):
+def detect_duplicates(df, buckets, embeddings, already_found, duplicate_detector,predictions,true_labels):
     true_duplicates = 0
     duplicates_identified = 0
     comparisons_made = 0
@@ -40,9 +40,11 @@ def detect_duplicates(df, buckets, embeddings, already_found, duplicate_detector
         if len(bucket) <= 1:
             continue
         for product1_index, product2_index in combinations(bucket, 2):
+            #No counting of duplicates within the same shop 
             if df.iloc[product1_index].shop == df.iloc[product2_index].shop:
                 continue
-            if df.iloc[product1_index].id in already_found:
+            #No double counting of duplicates 
+            if (product1_index,product2_index) in already_found or (product2_index,product1_index) in already_found:
                 continue
 
             comparisons_made += 1
@@ -54,6 +56,9 @@ def detect_duplicates(df, buckets, embeddings, already_found, duplicate_detector
             prediction = duplicate_detector.predict(catboost_sample)
 
             is_duplicate = df.iloc[product1_index].id == df.iloc[product2_index].id
+            
+            predictions.append(prediction)
+            true_labels.append(is_duplicate)
 
             true_duplicates += is_duplicate
             decision = (
@@ -62,9 +67,12 @@ def detect_duplicates(df, buckets, embeddings, already_found, duplicate_detector
             duplicates_identified += 1 if decision else 0
 
             if decision:
-                already_found[df.iloc[product1_index].id] = True
+                if product1_index < product2_index:
+                    already_found[(product1_index,product2_index)] = True
+                else:
+                    already_found[(product2_index,product1_index)] = True
 
-    return duplicates_identified, comparisons_made, already_found
+    return duplicates_identified, comparisons_made, already_found, true_labels, predictions
 
 
 # Method which repeats the cosine lsh multiple times to find more duplicates.
@@ -72,6 +80,8 @@ def repeated_lsh(trials, random_planes, embeddings, df, duplicate_detector):
     duplicate_pairs_found = {}
     duplicates_identified = 0
     comparisons_made = 0
+    predictions = []
+    true_labels = []
 
     for t in range(0, trials):
         buckets = cosine_locality_sensitive_hash(random_planes, embeddings)
@@ -80,14 +90,16 @@ def repeated_lsh(trials, random_planes, embeddings, df, duplicate_detector):
             new_duplicates_identified,
             new_comparisons_made,
             duplicate_pairs_found,
+            predictions, 
+            true_labels 
         ) = detect_duplicates(
-            df, buckets, embeddings, duplicate_pairs_found, duplicate_detector
+            df, buckets, embeddings, duplicate_pairs_found, duplicate_detector, predictions, true_labels 
         )
 
         duplicates_identified += new_duplicates_identified
         comparisons_made += new_comparisons_made
 
-    return duplicates_identified, comparisons_made
+    return duplicates_identified, comparisons_made, predictions, true_labels
 
 
 def run_experiment(
@@ -103,15 +115,17 @@ def run_experiment(
     best_f1score = 0
     for N_TRIALS in tqdm(trial_candidates):
         for N_PLANES in tqdm(plane_candidates):
-            duplicates_identified, comparisons_made = repeated_lsh(
+            duplicates_identified, comparisons_made,predictions,true_labels = repeated_lsh(
                 N_TRIALS, N_PLANES, embeddings, df, duplicate_detector
             )
 
-            pair_quality, pair_completeness, f1score, fraction_comparisons = summary(
+            pair_quality, pair_completeness, f1_star_score,f1score, fraction_comparisons = summary(
                 duplicates_identified,
                 total_duplicates,
                 comparisons_made,
                 len(df),
+                predictions,
+                true_labels, 
                 print_output=False,
             )
 
@@ -124,6 +138,7 @@ def run_experiment(
                         N_PLANES,
                         pair_quality,
                         pair_completeness,
+                        f1_star_score, 
                         f1score,
                         fraction_comparisons,
                     ]

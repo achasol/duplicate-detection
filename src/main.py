@@ -80,7 +80,8 @@ for identifier in range(0, 8):
             "n_planes",
             "pair_quality",
             "pair_completeness",
-            "f1_score",
+            "f1*_score",
+            "f1_score", 
             "comparisons_fraction",
         ],
     )
