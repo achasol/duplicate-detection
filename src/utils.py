@@ -4,6 +4,8 @@ import math
 import numpy as np
 from tabulate import tabulate
 from sklearn.metrics import f1_score 
+from brands import get_brands
+import re
 
 # Function to load the product dataset and generate a minimal representation
 def load_dataset():
@@ -23,8 +25,47 @@ def load_dataset():
             )
     minimal_product_df = pd.DataFrame(minimal_products, columns=["shop", "title", "id"])
 
+    cols =  minimal_product_df['title'].str.extract(r'([a-zA-Z0-9]*(([0-9]+[ˆ0-9, ]+)|([ˆ0-9, ]+[0-9]+))[a-zA-Z0-9]*)')
+
+    cols = cols.fillna(" - ")
+    
+   
+
+    minimal_product_df['brand'] =  find_brands(minimal_product_df['title'])
+    minimal_product_df['dense_title'] = cols.apply(lambda row: ''.join(str(e) for e in row), axis=1)
+
+    minimal_product_df['title'] = minimal_product_df['dense_title']
+
     return minimal_product_df
 
+def identify_brand(product_title, brand_list):
+    for brand in brand_list:
+        # Create a case-insensitive regular expression pattern for each brand
+        pattern = re.compile(fr'\b{re.escape(brand)}\b', re.IGNORECASE)
+        
+        # Check if the pattern matches the product title
+        if re.search(pattern, product_title):
+            return brand
+    
+    # Return None if no match is found
+    return None
+
+def find_brands(product_titles): 
+    # Example usage:
+
+    brands_to_identify = get_brands()
+    counter = 0 
+    identified_brands = []
+    
+    for title in product_titles:
+        identified_brand = identify_brand(title, brands_to_identify)
+        if identified_brand == None:
+            counter+=1 
+            identified_brand = f'NAIM{counter}'
+
+        identified_brands.append(identified_brand)
+
+    return identified_brands
 
 # Count the true number of duplicates present in a bootstrap sample
 def num_duplicates(numbers, df):
@@ -113,7 +154,7 @@ def visualize_results(results):
                 "pair quality",
                 "pair completeness",
                 "f1*-score",
-                "f1score"
+                "f1score",
                 "fraction comparisons",
             ],
             tablefmt="pretty",

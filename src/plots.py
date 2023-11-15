@@ -14,7 +14,6 @@ data = pd.read_csv(r'../results/bootstrap-runs.csv')
 
 #TODO take average over bootstraps here 
 
-
 #BIN observations based on fraction of comparisons 
 size = 0.05 
 # Define bin edges

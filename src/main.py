@@ -5,6 +5,8 @@ from finetuned_sbert import generate_reduced_sbert_embeddings, tune_sbert_model
 import pandas as pd
 from classifier import train_catboost_classifier
 
+
+
 np.random.seed(42)
 
 
@@ -20,38 +22,31 @@ def bootstrap_run(bootstrap_identifier):
     print(total_test_duplicates)
 
     print("Fine tuning SBERT model...")
-    tune_sbert_model(bootstrap_identifier, train_df)
+    #tune_sbert_model(bootstrap_identifier, train_df)
     print("Fine tuning SBERT finished ✅")
 
+    #Was 96
     train_product_embeddings = generate_reduced_sbert_embeddings(
-        96, train_df["title"], bootstrap_identifier
+        4, train_df["title"], bootstrap_identifier
     )
     test_product_embeddings = generate_reduced_sbert_embeddings(
-        96, test_df["title"], bootstrap_identifier
+        4, test_df["title"], bootstrap_identifier
     )
+    print(test_product_embeddings[0])
+    print(len(test_product_embeddings[0]))
     print("Reduced sentence embeddings generated ✅")
 
     print("Training catboost model...")
     # Import and train the catboost classifier here
-    catboost_model = train_catboost_classifier(train_product_embeddings, train_df)
+    catboost_model = None #train_catboost_classifier(train_product_embeddings, train_df)
 
     print("Catboost model estimated ✅")
 
     # Random procedure ofcourse values will differ?
-    trial_candidates = [1,2,4,6,8,12,32,64] #range(1, 32)
-    plane_candidates = [6,9,12,24,32] #range(3, 48)
+    trial_candidates = [1, 4,8,16,32]
+    plane_candidates = range(3, 48)
 
-    """
-    run_experiment(
-        train_df,
-        train_product_embeddings,
-        catboost_model,
-        trial_candidates,
-        plane_candidates,
-        total_train_duplicates,
-        1,  
-    )
-    """
+
     results = run_experiment(
         test_df,
         test_product_embeddings,

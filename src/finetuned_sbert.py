@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from itertools import combinations
 import numpy as np
 from sklearn.decomposition import PCA
+from transformers import EarlyStoppingCallback
 import torch
 import os
 
@@ -24,12 +25,14 @@ def tune_sbert_model(run_identifier, train_data):
     # TODO consider taking a random sample of the training data instead of all combinations
     # See impact on performance currently only using 25% of total training data (increase tuning speed)
     # INCREASE TO FULL SAMPLE! (has large impact on quality)
-    #chosen_samples = np.random.choice(
-    #    range(len(train_data)), size=(len(train_data))
-    #)
+    chosen_samples = np.random.choice(
+        range(len(train_data)), size=(len(train_data) // 2)
+    )
+
+    early_stopping = EarlyStoppingCallback(early_stopping_patience=2, early_stopping_threshold=0.01)
 
     train_examples = []
-    for product1_index, product2_index in combinations(range(len(train_data)), 2):
+    for product1_index, product2_index in combinations(chosen_samples, 2):
         product1 = train_data.iloc[product1_index]
         product2 = train_data.iloc[product2_index]
         train_examples.append(
@@ -56,7 +59,8 @@ def tune_sbert_model(run_identifier, train_data):
 def generate_reduced_sbert_embeddings(
     desired_dimension, product_titles, run_identifier
 ):
-    model = SentenceTransformer(f"../models/fine-tuned-model-{run_identifier}")
+    #No fine tuning 
+    model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
     embeddings = model.encode(product_titles.tolist())
     pca = PCA(n_components=desired_dimension)
     pca.fit(embeddings)

@@ -3,9 +3,10 @@ from itertools import combinations
 from classifier import generate_catboost_sample
 from utils import summary
 from tqdm import tqdm
-
+from numba import jit
 
 # Generate an array of buckets using the generated hashcodes
+
 def get_buckets(hashes):
     buckets = {}
     for index, hash in enumerate(hashes):
@@ -43,6 +44,8 @@ def detect_duplicates(df, buckets, embeddings, already_found, duplicate_detector
             #No counting of duplicates within the same shop 
             if df.iloc[product1_index].shop == df.iloc[product2_index].shop:
                 continue
+            if df.iloc[product1_index].brand != df.iloc[product2_index].brand:
+                continue
             #No double counting of duplicates 
             if (product1_index,product2_index) in already_found or (product2_index,product1_index) in already_found:
                 continue
@@ -53,7 +56,7 @@ def detect_duplicates(df, buckets, embeddings, already_found, duplicate_detector
             product2 = embeddings[product2_index]
 
             catboost_sample = generate_catboost_sample(product1, product2)
-            prediction = duplicate_detector.predict(catboost_sample)
+            prediction = df.iloc[product1_index].id == df.iloc[product2_index].id  #duplicate_detector.predict(catboost_sample)
 
             is_duplicate = df.iloc[product1_index].id == df.iloc[product2_index].id
             
@@ -112,7 +115,7 @@ def run_experiment(
     run_identifier,
 ):
     results = []
-    best_f1score = 0
+
     for N_TRIALS in tqdm(trial_candidates):
         for N_PLANES in tqdm(plane_candidates):
             duplicates_identified, comparisons_made,predictions,true_labels = repeated_lsh(
@@ -145,9 +148,4 @@ def run_experiment(
                 ]
             )
 
-            if f1score > best_f1score:
-                best_f1score = f1score
-                print(
-                    f"Best: identifier {run_identifier} - planes - {N_PLANES} - trials - {N_TRIALS} - f1 - {f1score} - {fraction_comparisons}"
-                )
     return results
