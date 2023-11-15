@@ -3,11 +3,74 @@ import pandas as pd
 import math
 import numpy as np
 from tabulate import tabulate
-from sklearn.metrics import f1_score 
+from sklearn.metrics import f1_score
 from brands import get_brands
 import re
 
+
 # Function to load the product dataset and generate a minimal representation
+
+
+def load_dataset_v2():
+    file = open(r"../data/TVs-all-merged.json")
+    products = json.load(file)
+
+    minimal_products = []
+
+    dup_identifier = 0
+
+    for product_id in products:
+        for product in products[product_id]:
+            minimal_products.append(
+                {
+                    "shop": product["shop"],
+                    "title": product["title"]
+                    + "|".join(product["featuresMap"].values()),
+                    "id": product["modelID"],
+                    "dup_identifier": dup_identifier,
+                }
+            )
+        dup_identifier += 1
+
+    minimal_product_df = pd.DataFrame(
+        minimal_products, columns=["shop", "title", "id", "dup_identifier"]
+    )
+
+    cols = minimal_product_df["title"].str.extract(
+        r"([a-zA-Z0-9]*(([0-9]+[ˆ0-9, ]+)|([ˆ0-9, ]+[0-9]+))[a-zA-Z0-9]*)"
+    )
+
+    cols = cols.fillna("  ")
+
+    minimal_product_df["brand"] = find_brands(minimal_product_df["title"])
+    minimal_product_df["resolution"] = minimal_product_df["title"].str.extract(
+        r"\b(\d{3,4})p\b"
+    )
+    minimal_product_df["refresh_rate"] = minimal_product_df["title"].str.extract(
+        r"(\d+)(?=[Hh][Zz])"
+    )
+
+    weights = (
+        minimal_product_df["title"]
+        .str.extractall(r"(\d+(?:\.\d+)?)\s*lbs")
+        .groupby(level=0)[0]
+        .apply(list)
+    )
+
+    minimal_product_df["weight"] = weights.apply(
+        lambda x: min(map(float, x), default=None)
+    )
+
+    minimal_product_df["dense_title"] = cols.apply(
+        lambda row: "".join(str(e) for e in row), axis=1
+    )
+    minimal_product_df = minimal_product_df.fillna(" ")
+    minimal_product_df["title"] = minimal_product_df[
+        ["brand", "resolution", "refresh_rate", "weight"]
+    ].apply(lambda row: " ".join(map(str, row)), axis=1)
+    return minimal_product_df
+
+
 def load_dataset():
     file = open(r"../data/TVs-all-merged.json")
     products = json.load(file)
@@ -25,47 +88,52 @@ def load_dataset():
             )
     minimal_product_df = pd.DataFrame(minimal_products, columns=["shop", "title", "id"])
 
-    cols =  minimal_product_df['title'].str.extract(r'([a-zA-Z0-9]*(([0-9]+[ˆ0-9, ]+)|([ˆ0-9, ]+[0-9]+))[a-zA-Z0-9]*)')
+    cols = minimal_product_df["title"].str.extract(
+        r"([a-zA-Z0-9]*(([0-9]+[ˆ0-9, ]+)|([ˆ0-9, ]+[0-9]+))[a-zA-Z0-9]*)"
+    )
 
-    cols = cols.fillna(" - ")
-    
-   
+    cols = cols.fillna("  ")
 
-    minimal_product_df['brand'] =  find_brands(minimal_product_df['title'])
-    minimal_product_df['dense_title'] = cols.apply(lambda row: ''.join(str(e) for e in row), axis=1)
+    minimal_product_df["brand"] = find_brands(minimal_product_df["title"])
+    minimal_product_df["dense_title"] = cols.apply(
+        lambda row: "".join(str(e) for e in row), axis=1
+    )
 
-    minimal_product_df['title'] = minimal_product_df['dense_title']
+    # minimal_product_df["title"] = minimal_product_df["dense_title"]
 
     return minimal_product_df
+
 
 def identify_brand(product_title, brand_list):
     for brand in brand_list:
         # Create a case-insensitive regular expression pattern for each brand
-        pattern = re.compile(fr'\b{re.escape(brand)}\b', re.IGNORECASE)
-        
+        pattern = re.compile(rf"\b{re.escape(brand)}\b", re.IGNORECASE)
+
         # Check if the pattern matches the product title
         if re.search(pattern, product_title):
             return brand
-    
+
     # Return None if no match is found
     return None
 
-def find_brands(product_titles): 
+
+def find_brands(product_titles):
     # Example usage:
 
     brands_to_identify = get_brands()
-    counter = 0 
+    counter = 0
     identified_brands = []
-    
+
     for title in product_titles:
         identified_brand = identify_brand(title, brands_to_identify)
         if identified_brand == None:
-            counter+=1 
-            identified_brand = f'NAIM{counter}'
+            counter += 1
+            identified_brand = f"NAIM{counter}"
 
         identified_brands.append(identified_brand)
 
     return identified_brands
+
 
 # Count the true number of duplicates present in a bootstrap sample
 def num_duplicates(numbers, df):
@@ -87,11 +155,17 @@ def num_duplicates(numbers, df):
 
 # Method used to display the output of the duplicate detection in a suitable way
 def summary(
-    duplicates_found, total_duplicates, comparisons_made, df_size,predictions,true_labels, print_output=True
+    duplicates_found,
+    total_duplicates,
+    comparisons_made,
+    df_size,
+    predictions,
+    true_labels,
+    print_output=True,
 ):
     if comparisons_made == 0 or total_duplicates == 0:
         print("No duplicates found")
-        return 0, 0, 0, 0
+        return 0, 0, 0, 0, 0
 
     pair_quality = duplicates_found / comparisons_made
     pair_completeness = duplicates_found / total_duplicates
@@ -100,7 +174,7 @@ def summary(
         if pair_completeness + pair_quality > 0
         else 0
     )
-    f1score = f1_score(true_labels,predictions)
+    f1score = f1_score(true_labels, predictions)
     fraction_comparisons = round(comparisons_made / math.comb(df_size, 2), 6)
     if print_output:
         print(f"Total number of duplicates: {total_duplicates}")
@@ -121,7 +195,7 @@ def summary(
         pair_quality,
         pair_completeness,
         f1_star_score,
-        f1score , 
+        f1score,
         fraction_comparisons,
     )
 

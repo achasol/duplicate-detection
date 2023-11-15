@@ -13,11 +13,14 @@ from transformers import EarlyStoppingCallback
 import torch
 import os
 
-def tune_sbert_model(run_identifier, train_data):
 
-    #The tuned model is already stored 
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+
+
+def tune_sbert_model(run_identifier, train_data):
+    # The tuned model is already stored
     if os.path.isdir(f"../models/fine-tuned-model-{run_identifier}"):
-        return 
+        return
 
     print("Torch version:", torch.__version__)
     print("Is CUDA enabled?", torch.cuda.is_available())
@@ -29,7 +32,9 @@ def tune_sbert_model(run_identifier, train_data):
         range(len(train_data)), size=(len(train_data) // 2)
     )
 
-    early_stopping = EarlyStoppingCallback(early_stopping_patience=2, early_stopping_threshold=0.01)
+    early_stopping = EarlyStoppingCallback(
+        early_stopping_patience=2, early_stopping_threshold=0.01
+    )
 
     train_examples = []
     for product1_index, product2_index in combinations(chosen_samples, 2):
@@ -50,7 +55,9 @@ def tune_sbert_model(run_identifier, train_data):
     train_loss = losses.SoftmaxLoss(
         model=model, sentence_embedding_dimension=384, num_labels=2
     )
-    model.fit(train_objectives=[(train_dataloader, train_loss)], epochs=10)  # Initial 10
+    model.fit(
+        train_objectives=[(train_dataloader, train_loss)], epochs=10
+    )  # Initial 10
 
     model.save(f"../models/fine-tuned-model-{run_identifier}")
 
@@ -59,7 +66,7 @@ def tune_sbert_model(run_identifier, train_data):
 def generate_reduced_sbert_embeddings(
     desired_dimension, product_titles, run_identifier
 ):
-    #No fine tuning 
+    # No fine tuning
     model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
     embeddings = model.encode(product_titles.tolist())
     pca = PCA(n_components=desired_dimension)
@@ -74,5 +81,28 @@ def generate_reduced_sbert_embeddings(
     )
 
     dense.linear.weight = torch.nn.Parameter(torch.tensor(pca_comp))
-    model.add_module("dense", dense)
+    # model.add_module("dense", dense)
     return model.encode(product_titles.tolist())
+
+
+def generate_tfidf_embeddings(product_titles):
+    tfidf_vectorizer = TfidfVectorizer()
+
+    # Fit and transform the sentences
+    tfidf_matrix = tfidf_vectorizer.fit_transform(product_titles)
+
+    # Convert the sparse matrix to a dense array and print the result
+    tfidf_embeddings = tfidf_matrix.toarray()
+    return tfidf_embeddings
+
+
+def generate_count_embeddings(product_titles):
+    # Create the CountVectorizer
+    count_vectorizer = CountVectorizer(ngram_range=(2, 3))
+
+    # Fit and transform the sentences
+    count_matrix = count_vectorizer.fit_transform(product_titles)
+
+    # Convert the sparse matrix to a dense array and print the result
+    count_embeddings = count_matrix.toarray()
+    return count_embeddings
