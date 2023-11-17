@@ -96,13 +96,24 @@ def generate_tfidf_embeddings(product_titles):
     return tfidf_embeddings
 
 
-def generate_count_embeddings(product_titles):
-    # Create the CountVectorizer
-    count_vectorizer = CountVectorizer(ngram_range=(2, 3))
+def one_hot_encode_n_shingles(product_titles, n):
+    """
+    One-hot encodes n-shingles of multiple sentences.
 
-    # Fit and transform the sentences
-    count_matrix = count_vectorizer.fit_transform(product_titles)
+    Parameters:
+    - sentences (list): List of sentences (strings).
+    - n (int): Size of n-shingles.
 
-    # Convert the sparse matrix to a dense array and print the result
-    count_embeddings = count_matrix.toarray()
-    return count_embeddings
+    Returns:
+    - one_hot_matrix (numpy array): One-hot encoded matrix of n-shingles for each sentence.
+    - feature_names (list): List of feature names corresponding to the columns of the matrix.
+    """
+
+    # Use CountVectorizer for one-hot encoding
+    vectorizer = CountVectorizer(analyzer="char", ngram_range=(n, n), binary=True)
+    one_hot_matrix = vectorizer.fit_transform(product_titles).toarray()
+
+    # Get feature names (shingle names)
+    # feature_names = vectorizer.get_feature_names_out()
+
+    return one_hot_matrix

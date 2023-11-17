@@ -99,7 +99,7 @@ def load_dataset():
         lambda row: "".join(str(e) for e in row), axis=1
     )
 
-    # minimal_product_df["title"] = minimal_product_df["dense_title"]
+    minimal_product_df["title"] = minimal_product_df["dense_title"]
 
     return minimal_product_df
 
@@ -175,7 +175,7 @@ def summary(
         else 0
     )
     f1score = f1_score(true_labels, predictions)
-    fraction_comparisons = round(comparisons_made / math.comb(df_size, 2), 6)
+    fraction_comparisons = round(comparisons_made / math.comb(df_size, 2), 12)
     if print_output:
         print(f"Total number of duplicates: {total_duplicates}")
         print(f"Duplicates found: {duplicates_found}")
@@ -223,8 +223,8 @@ def visualize_results(results):
             results,
             headers=[
                 "run_identifier",
-                "trial",
-                "planes",
+                "num_bands",
+                "num_rows",
                 "pair quality",
                 "pair completeness",
                 "f1*-score",

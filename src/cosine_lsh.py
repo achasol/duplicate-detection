@@ -42,7 +42,7 @@ def detect_duplicates(
     duplicates_identified = 0
     comparisons_made = 0
 
-    for bucket in buckets:
+    for index, bucket in enumerate(buckets):
         if len(bucket) <= 1:
             continue
         for product1_index, product2_index in combinations(bucket, 2):
@@ -86,12 +86,12 @@ def detect_duplicates(
                 else:
                     already_found[(product2_index, product1_index)] = True
 
-    print(
-        "comparisons performed: "
-        + str(comparisons_made)
-        + "/"
-        + str(sum([math.comb(len(bucket), 2) for bucket in buckets]))
-    )
+    # print(
+    #    "comparisons performed: "
+    #    + str(comparisons_made)
+    #    + "/"
+    #    + str(sum([math.comb(len(bucket), 2) for bucket in buckets]))
+    # )
 
     return (
         duplicates_identified,
@@ -100,6 +100,41 @@ def detect_duplicates(
         true_labels,
         predictions,
     )
+
+
+def repeated_minhash_lsh(
+    num_hashes, num_bands, num_rows, embeddings, df, duplicate_detector
+):
+    duplicate_pairs_found = {}
+    duplicates_identified = 0
+    comparisons_made = 0
+    predictions = []
+    true_labels = []
+
+    # Preserve this equality at all times
+    num_hashes = num_bands * num_rows
+    buckets = generate_minhashes(num_bands, num_rows, embeddings)
+
+    (
+        new_duplicates_identified,
+        new_comparisons_made,
+        duplicate_pairs_found,
+        predictions,
+        true_labels,
+    ) = detect_duplicates(
+        df,
+        buckets,
+        embeddings,
+        duplicate_pairs_found,
+        duplicate_detector,
+        predictions,
+        true_labels,
+    )
+
+    duplicates_identified += new_duplicates_identified
+    comparisons_made += new_comparisons_made
+
+    return duplicates_identified, comparisons_made, predictions, true_labels
 
 
 # Method which repeats the cosine lsh multiple times to find more duplicates.
@@ -139,21 +174,24 @@ def run_experiment(
     df,
     embeddings,
     duplicate_detector,
-    trial_candidates,
-    plane_candidates,
+    row_candidates,
+    band_candidates,
+    num_hashes,
     total_duplicates,
     run_identifier,
 ):
     results = []
 
-    for N_TRIALS in tqdm(trial_candidates):
-        for N_PLANES in tqdm(plane_candidates):
+    for num_bands in tqdm(band_candidates):
+        for num_rows in tqdm(row_candidates):
             (
                 duplicates_identified,
                 comparisons_made,
                 predictions,
                 true_labels,
-            ) = repeated_lsh(N_TRIALS, N_PLANES, embeddings, df, duplicate_detector)
+            ) = repeated_minhash_lsh(
+                num_hashes, num_bands, num_rows, embeddings, df, duplicate_detector
+            )
 
             (
                 pair_quality,
@@ -176,8 +214,8 @@ def run_experiment(
                     round(elem, 3)
                     for elem in [
                         run_identifier,
-                        N_TRIALS,
-                        N_PLANES,
+                        num_bands,
+                        num_rows,
                         pair_quality,
                         pair_completeness,
                         f1_star_score,
