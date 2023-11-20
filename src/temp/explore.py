@@ -17,7 +17,7 @@ weight
 uniform_properties = ["brand", "resolution", "refresh_rate", "weight"]
 
 
-def load_dataset():
+def load_dataset_v2():
     file = open(r"../data/TVs-all-merged.json")
     products = json.load(file)
 
@@ -49,11 +49,22 @@ def load_dataset():
     cols = cols.fillna("  ")
 
     minimal_product_df["brand"] = find_brands(minimal_product_df["title"])
+
+    minimal_product_df["title"] = minimal_product_df["title"].str.lower()
+
     minimal_product_df["resolution"] = minimal_product_df["title"].str.extract(
         r"\b(\d{3,4})p\b"
     )
     minimal_product_df["refresh_rate"] = minimal_product_df["title"].str.extract(
         r"(\d+)(?=[Hh][Zz])"
+    )
+
+    dimensions = minimal_product_df["title"].str.extract(
+        r"(\d{2,4})(?:mm|cm) (?:x|X) (\d{2,4})(?:mm|cm)"
+    )
+
+    minimal_product_df["dimensions"] = dimensions.fillna("").apply(
+        lambda row: "x".join(str(e) for e in row), axis=1
     )
 
     weights = (
@@ -70,13 +81,12 @@ def load_dataset():
     minimal_product_df["dense_title"] = cols.apply(
         lambda row: "".join(str(e) for e in row), axis=1
     )
-    # minimal_product_df = minimal_product_df.fillna(" ")
-    minimal_product_df["title"] = minimal_product_df[uniform_properties].apply(
-        lambda row: " ".join(map(str, row)), axis=1
-    )
-    return minimal_product_df
+    minimal_product_df = minimal_product_df.fillna(" ")
+    minimal_product_df["title"] = minimal_product_df[
+        ["brand", "resolution", "refresh_rate", "weight", "dimensions"]
+    ].apply(lambda row: " ".join(map(str, row)), axis=1)
+
+    return minimal_product_df["title"]
 
 
-data = load_dataset()
-
-print(data[uniform_properties])
+print(load_dataset_v2())

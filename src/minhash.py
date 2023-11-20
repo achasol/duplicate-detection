@@ -1,30 +1,8 @@
-"""
-Write a complete minhash implementation from scratch 
-"""
 import numpy as np
 from numba import njit
 
-shingles = np.array(
-    [
-        [1, 1, 0, 1],
-        [1, 1, 0, 1],
-        [1, 1, 1, 1],
-        [1, 1, 1, 1],
-    ]
-)
-
 
 # https://planetmath.org/goodhashtableprimes
-
-"""
-@njit
-def hash_function(a: int, b: int, x: int, c=3145739):  # 786433
-    return np.mod(a + b * x, c)
-
-
-def hash_row(row, seed):
-    return [hash_function(seed[0], seed[1], c) for c in row]
-"""
 
 
 @njit
@@ -76,11 +54,6 @@ def split_matrix_into_bands(signature_matrix, b, r):
     return bands
 
 
-"""
-Need to know which bands and rows match to which shingles 
-"""
-
-
 def lsh_minhash(num_bands, num_rows, embeddings):
     num_hashes = num_bands * num_rows
     signatures = generate_minhash_signature_matrix(num_hashes, embeddings)
@@ -106,7 +79,7 @@ def lsh_minhash(num_bands, num_rows, embeddings):
     bucket_sizes = [len(bucket) for bucket in unique_buckets]
 
     # Drop the 10% largest buckets
-    threshold = np.percentile(bucket_sizes, 85)
+    threshold = np.percentile(bucket_sizes, 85)  # 85
 
     top_indices = np.where(bucket_sizes >= threshold)[0]
     unique_buckets = list(unique_buckets)
@@ -118,6 +91,3 @@ def lsh_minhash(num_bands, num_rows, embeddings):
 
 def generate_minhashes(num_bands, num_rows, embeddings):
     return lsh_minhash(num_bands, num_rows, embeddings)
-
-
-# lsh_minhash(4, 3, shingles)

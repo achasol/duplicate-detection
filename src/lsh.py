@@ -1,13 +1,11 @@
 import numpy as np
 from itertools import combinations
-from classifier import generate_catboost_sample
 from utils import summary
 from tqdm import tqdm
 from numba import jit
-import math
-from minhash import generate_minhashes
 
-# Generate an array of buckets using the generated hashcodes
+from minhash import generate_minhashes
+from scipy.stats import wasserstein_distance
 
 
 def get_buckets(hashes):
@@ -22,7 +20,6 @@ def get_buckets(hashes):
     return list(buckets.values())
 
 
-# Implementation of cosine LSH using random hyperplanes
 def cosine_locality_sensitive_hash(n_planes, vectors):
     vector_dim = len(vectors[0])
 
@@ -32,12 +29,24 @@ def cosine_locality_sensitive_hash(n_planes, vectors):
     return get_buckets(hashes)
 
 
-# Method which iterates over the LSH buckets and uses the classifier to determine which elements are duplicates.
-# TODO bug in the method a product id can be found more than 2 times (multi duplicate!!)
-# Instead add sorted index pair i < j as identifiers to already_found!
-def detect_duplicates(
-    df, buckets, embeddings, already_found, duplicate_detector, predictions, true_labels
-):
+def jaccard_similarity(embedding1, embedding2):
+    cm = np.zeros((2, 2), dtype=int)
+
+    for a, p in zip(embedding1, embedding2):
+        cm[a, p] += 1
+
+    return cm[1, 1] / (cm[1, 1] + cm[0, 1] + cm[1, 0])
+
+
+def wasserstein_similarity(embedding1, embedding2):
+    hamming_distance = np.count_nonzero(embedding1 != embedding2)
+    if hamming_distance == 0:
+        return 1
+    wasserstein_distance_value = wasserstein_distance(embedding1, embedding2)
+    return wasserstein_distance_value / hamming_distance
+
+
+def detect_duplicates(df, buckets, embeddings, already_found, predictions, true_labels):
     true_duplicates = 0
     duplicates_identified = 0
     comparisons_made = 0
@@ -64,10 +73,10 @@ def detect_duplicates(
             product1 = embeddings[product1_index]
             product2 = embeddings[product2_index]
 
-            catboost_sample = generate_catboost_sample(product1, product2)
             prediction = (
-                df.iloc[product1_index].id == df.iloc[product2_index].id
-            )  # duplicate_detector.predict(catboost_sample)
+                wasserstein_similarity(product1, product2) >= 0.9
+                and jaccard_similarity(product1, product2) >= 0.9
+            )
 
             is_duplicate = df.iloc[product1_index].id == df.iloc[product2_index].id
 
@@ -75,9 +84,7 @@ def detect_duplicates(
             true_labels.append(is_duplicate)
 
             true_duplicates += is_duplicate
-            decision = (
-                is_duplicate and np.rint(prediction) == 1
-            )  # Needs to change currently perfect measure
+            decision = is_duplicate and prediction
             duplicates_identified += 1 if decision else 0
 
             if decision:
@@ -85,13 +92,6 @@ def detect_duplicates(
                     already_found[(product1_index, product2_index)] = True
                 else:
                     already_found[(product2_index, product1_index)] = True
-
-    # print(
-    #    "comparisons performed: "
-    #    + str(comparisons_made)
-    #    + "/"
-    #    + str(sum([math.comb(len(bucket), 2) for bucket in buckets]))
-    # )
 
     return (
         duplicates_identified,
@@ -102,17 +102,13 @@ def detect_duplicates(
     )
 
 
-def repeated_minhash_lsh(
-    num_hashes, num_bands, num_rows, embeddings, df, duplicate_detector
-):
+def repeated_minhash_lsh(num_bands, num_rows, embeddings, df):
     duplicate_pairs_found = {}
     duplicates_identified = 0
     comparisons_made = 0
     predictions = []
     true_labels = []
 
-    # Preserve this equality at all times
-    num_hashes = num_bands * num_rows
     buckets = generate_minhashes(num_bands, num_rows, embeddings)
 
     (
@@ -126,7 +122,6 @@ def repeated_minhash_lsh(
         buckets,
         embeddings,
         duplicate_pairs_found,
-        duplicate_detector,
         predictions,
         true_labels,
     )
@@ -137,46 +132,11 @@ def repeated_minhash_lsh(
     return duplicates_identified, comparisons_made, predictions, true_labels
 
 
-# Method which repeats the cosine lsh multiple times to find more duplicates.
-def repeated_lsh(trials, random_planes, embeddings, df, duplicate_detector):
-    duplicate_pairs_found = {}
-    duplicates_identified = 0
-    comparisons_made = 0
-    predictions = []
-    true_labels = []
-
-    for t in range(0, trials):
-        buckets = generate_minhashes(random_planes, embeddings)
-
-        (
-            new_duplicates_identified,
-            new_comparisons_made,
-            duplicate_pairs_found,
-            predictions,
-            true_labels,
-        ) = detect_duplicates(
-            df,
-            buckets,
-            embeddings,
-            duplicate_pairs_found,
-            duplicate_detector,
-            predictions,
-            true_labels,
-        )
-
-        duplicates_identified += new_duplicates_identified
-        comparisons_made += new_comparisons_made
-
-    return duplicates_identified, comparisons_made, predictions, true_labels
-
-
 def run_experiment(
     df,
     embeddings,
-    duplicate_detector,
     row_candidates,
     band_candidates,
-    num_hashes,
     total_duplicates,
     run_identifier,
 ):
@@ -189,9 +149,7 @@ def run_experiment(
                 comparisons_made,
                 predictions,
                 true_labels,
-            ) = repeated_minhash_lsh(
-                num_hashes, num_bands, num_rows, embeddings, df, duplicate_detector
-            )
+            ) = repeated_minhash_lsh(num_bands, num_rows, embeddings, df)
 
             (
                 pair_quality,
