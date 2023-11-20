@@ -26,6 +26,14 @@ To run the experiment make sure you install all dependencies and then run:
 python main.py
 ```
 
+## Running the test suite
+
+To make sure the experiment runs properly on your machine consider running
+
+```
+pytest tests/
+```
+
 ## Structure of the code
 
 The code is structured into several files.
@@ -39,6 +47,8 @@ The code is structured into several files.
 
 6.  The brands.py file is simply a container containing a python dict with
     all major tv brands extracted from wikipedia.
+
+Automated tests for key functions can be found in the tests folder.
 
 ## Personal Notes:
 
