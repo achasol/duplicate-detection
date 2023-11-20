@@ -1,24 +1,44 @@
 import numpy as np
 from numba import njit
 
-
 # https://planetmath.org/goodhashtableprimes
 
 
 @njit
 def hash_row(row, seed):
+    """
+    Hash a given row using the specified seed.
+
+    Parameters:
+    - row (numpy.ndarray): The input row to be hashed.
+    - seed (tuple): A tuple of two integers used as the seed for hashing.
+
+    Returns:
+    numpy.ndarray: The hashed row.
+    """
     a, b = seed
     c = 402653189
     return np.mod(a + b * row, c)
 
 
 def generate_minhash_signature_matrix(num_hashes, embeddings):
+    """
+    Generate a MinHash signature matrix for the given embeddings.
+
+    Parameters:
+    - num_hashes (int): The number of hash functions to be used.
+    - embeddings (numpy.ndarray): The input embeddings.
+
+    Returns:
+    numpy.ndarray: The MinHash signature matrix.
+    """
     embeddings = embeddings.T
     signature_matrix = np.matrix(np.ones((num_hashes, len(embeddings[0]))) * np.inf)
+
     for row in embeddings:
         hashed_row = []
-
         seeds = np.random.randint(1, 2**24, size=(num_hashes, 2))
+
         for seed in seeds:
             hashed_row.append(hash_row(row, seed))
 
@@ -28,15 +48,25 @@ def generate_minhash_signature_matrix(num_hashes, embeddings):
             for i in range(num_hashes):
                 signature_matrix[i, index] = min(
                     signature_matrix[i, index],
-                    min(hashed_row[i]),  # Or min(hashed_row[i])
+                    min(hashed_row[i]),
                 )
 
     signatures = signature_matrix
-
     return signatures
 
 
 def split_matrix_into_bands(signature_matrix, b, r):
+    """
+    Split the signature matrix into bands.
+
+    Parameters:
+    - signature_matrix (numpy.ndarray): The input MinHash signature matrix.
+    - b (int): The number of bands.
+    - r (int): The number of rows per band.
+
+    Returns:
+    list: A list of bands, where each band is a submatrix of the signature matrix.
+    """
     num_rows, num_cols = signature_matrix.shape
 
     if num_rows % b != 0:
@@ -55,6 +85,17 @@ def split_matrix_into_bands(signature_matrix, b, r):
 
 
 def lsh_minhash(num_bands, num_rows, embeddings):
+    """
+    Perform Locality-Sensitive Hashing (LSH) on MinHash signatures.
+
+    Parameters:
+    - num_bands (int): The number of bands.
+    - num_rows (int): The number of rows per band.
+    - embeddings (numpy.ndarray): The input embeddings.
+
+    Returns:
+    list: A list of unique buckets representing candidate similar items.
+    """
     num_hashes = num_bands * num_rows
     signatures = generate_minhash_signature_matrix(num_hashes, embeddings)
     buckets = [{} for band in range(num_bands * num_rows)]
@@ -63,7 +104,7 @@ def lsh_minhash(num_bands, num_rows, embeddings):
 
     for index, candidate in enumerate(candidates):
         for embedding_index, row in enumerate(candidate.T):
-            hash_str = hash(str(row))  # hash_row(row, (1200, 1000))[0].tolist()
+            hash_str = hash(str(row))
             if str(hash_str) in buckets[index]:
                 buckets[index][str(hash_str)].append(embedding_index)
             else:
@@ -90,4 +131,15 @@ def lsh_minhash(num_bands, num_rows, embeddings):
 
 
 def generate_minhashes(num_bands, num_rows, embeddings):
+    """
+    Generate MinHashes using Locality-Sensitive Hashing.
+
+    Parameters:
+    - num_bands (int): The number of bands.
+    - num_rows (int): The number of rows per band.
+    - embeddings (numpy.ndarray): The input embeddings.
+
+    Returns:
+    list: A list of unique buckets representing candidate similar items.
+    """
     return lsh_minhash(num_bands, num_rows, embeddings)

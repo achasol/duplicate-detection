@@ -1,20 +1,23 @@
 import numpy as np
-from utils import (
-    bootstrap_sample,
-    visualize_results,
-    load_dataset_v2,
-)
+from utils import bootstrap_sample, visualize_results, load_dataset
 from lsh import run_experiment
-from embeddings import (
-    one_hot_encode_n_shingles,
-)
-import pandas as pd
+from embeddings import one_hot_encode_n_shingles
 from concurrent.futures import ProcessPoolExecutor
+from utils import process_results
 
 
 def bootstrap_run(bootstrap_identifier):
+    """
+    Perform a single run of the bootstrap sampling and LSH experiment.
+
+    Parameters:
+    - bootstrap_identifier (int): Identifier for the bootstrap run.
+
+    Returns:
+    list: Results of the LSH experiment for the given bootstrap run.
+    """
     np.random.seed(42 + bootstrap_identifier)
-    minimal_product_df = load_dataset_v2()
+    minimal_product_df = load_dataset()
 
     train_df, test_df, total_train_duplicates, total_test_duplicates = bootstrap_sample(
         minimal_product_df
@@ -40,24 +43,16 @@ def bootstrap_run(bootstrap_identifier):
 
 
 def bootstrap_run_parallel(identifier):
+    """
+    Perform a single run of the bootstrap sampling and LSH experiment in parallel.
+
+    Parameters:
+    - identifier (int): Identifier for the parallel run.
+
+    Returns:
+    list: Results of the LSH experiment for the given parallel run.
+    """
     return bootstrap_run(identifier)
-
-
-def process_results(all_results):
-    df = pd.DataFrame(
-        all_results,
-        columns=[
-            "run_identifier",
-            "n_trial",
-            "n_planes",
-            "pair_quality",
-            "pair_completeness",
-            "f1*_score",
-            "f1_score",
-            "comparisons_fraction",
-        ],
-    )
-    df.to_csv(r"../results/bootstrap-runs.csv", index=None)
 
 
 if __name__ == "__main__":

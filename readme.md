@@ -1,5 +1,45 @@
-# Duplicate detection
+# Scalable Duplicate Detection
 
+This repo contains my implementation for scalable detection of (near) duplicate webshop products.
+It is part of the course Computer science and business analytics at the Erasmus University.
+
+The objective of this assignment is to find near duplicate products in a dataset
+without performing an exhaustive comparison of all pairs. Hence we are instructed
+to use a locality sensitive hashing (LSH) method to reduce the number of comparisons
+in an effective way.
+
+I use the json data of the tv products to create uniform representations.
+In essence this boils down to extracting key features of the products
+using a variety of regex queries and then joining these features together.
+This yields a more dense and uniform representation of the product titles.
+
+I then encode these representations using a one-hot-encoding based on
+n-grams of the titles. These one-hot-encoded dense titles are
+subsequently used as inputs to a minhashing implementation of
+LSH.
+
+## Running the experiment
+
+To run the experiment make sure you install all dependencies and then run:
+
+```
+python main.py
+```
+
+## Structure of the code
+
+The code is structured into several files. The entrypoint of the method is the main.py file.
+The minhash.py file contains a minhashing implementation, the lsh.py file contains the logic
+required to use minhashing to perform LSH and also keep track of metrics during
+an experiment. The utils.py file contains a number of utility functions including
+the function responsible for creating the dense title representations. The plots.py
+file uses the results from multiple bootstrap runs of the experiment to
+easily generate plots on key metrics.
+
+The brands.py file is simply a container containing a python dict with
+all major tv brands extracted from wikipedia.
+
+Notes:
 MINHASHING WORKS
 
 But do not forget to implement a similarity metric now using golden labels

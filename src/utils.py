@@ -8,9 +8,40 @@ from brands import get_brands
 import re
 
 
-def load_dataset_v2():
-    file = open(r"../data/TVs-all-merged.json")
-    products = json.load(file)
+def process_results(all_results):
+    """
+    Process and save the results of multiple bootstrap runs.
+
+    Parameters:
+    - all_results (list): List of results from multiple bootstrap runs.
+    """
+    df = pd.DataFrame(
+        all_results,
+        columns=[
+            "run_identifier",
+            "n_trial",
+            "n_planes",
+            "pair_quality",
+            "pair_completeness",
+            "f1*_score",
+            "f1_score",
+            "comparisons_fraction",
+        ],
+    )
+    df.to_csv(r"../results/bootstrap-runs.csv", index=None)
+
+
+def load_dataset():
+    """
+    Load and preprocess the TV product dataset.
+
+    Returns:
+    pandas.DataFrame: Processed DataFrame containing TV product information.
+    """
+    # Load data from JSON file
+    file_path = r"../data/TVs-all-merged.json"
+    with open(file_path, "r") as file:
+        products = json.load(file)
 
     minimal_products = []
 
@@ -18,6 +49,7 @@ def load_dataset_v2():
 
     for product_id in products:
         for product in products[product_id]:
+            # Extract relevant information and create a minimal product entry
             minimal_products.append(
                 {
                     "shop": product["shop"],
@@ -29,14 +61,15 @@ def load_dataset_v2():
             )
         dup_identifier += 1
 
+    # Create DataFrame from the minimal product information
     minimal_product_df = pd.DataFrame(
         minimal_products, columns=["shop", "title", "id", "dup_identifier"]
     )
 
+    # Extract and process additional features from the 'title' column
     cols = minimal_product_df["title"].str.extract(
         r"([a-zA-Z0-9]*(([0-9]+[ˆ0-9, ]+)|([ˆ0-9, ]+[0-9]+))[a-zA-Z0-9]*)"
     )
-
     cols = cols.fillna("  ")
 
     minimal_product_df["brand"] = find_brands(minimal_product_df["title"])
@@ -81,6 +114,16 @@ def load_dataset_v2():
 
 
 def identify_brand(product_title, brand_list):
+    """
+    Identify the brand in a product title from a list of possible brands.
+
+    Parameters:
+    - product_title (str): The product title to be analyzed.
+    - brand_list (list): List of possible brands.
+
+    Returns:
+    str or None: The identified brand or None if no match is found.
+    """
     for brand in brand_list:
         # Create a case-insensitive regular expression pattern for each brand
         pattern = re.compile(rf"\b{re.escape(brand)}\b", re.IGNORECASE)
@@ -94,15 +137,22 @@ def identify_brand(product_title, brand_list):
 
 
 def find_brands(product_titles):
-    # Example usage:
+    """
+    Identify brands in a list of product titles.
 
+    Parameters:
+    - product_titles (list): List of product titles.
+
+    Returns:
+    list: List of identified brands for each product title.
+    """
     brands_to_identify = get_brands()
     counter = 0
     identified_brands = []
 
     for title in product_titles:
         identified_brand = identify_brand(title, brands_to_identify)
-        if identified_brand == None:
+        if identified_brand is None:
             counter += 1
             identified_brand = f"NAIM{counter}"
 
@@ -111,8 +161,17 @@ def find_brands(product_titles):
     return identified_brands
 
 
-# Count the true number of duplicates present in a bootstrap sample
 def num_duplicates(numbers, df):
+    """
+    Count the true number of duplicates present in a bootstrap sample.
+
+    Parameters:
+    - numbers (list): List of indices corresponding to the bootstrap sample.
+    - df (pandas.DataFrame): DataFrame containing product information.
+
+    Returns:
+    int: Number of true duplicates in the bootstrap sample.
+    """
     counter = {}
     for number in numbers:
         if df.iloc[number].id in counter:
@@ -125,11 +184,9 @@ def num_duplicates(numbers, df):
 
     for count in list(counter.values()):
         duplicates += math.comb(len(count.keys()), 2)
-    # print(duplicates)
     return duplicates
 
 
-# Method used to display the output of the duplicate detection in a suitable way
 def summary(
     duplicates_found,
     total_duplicates,
@@ -139,6 +196,21 @@ def summary(
     true_labels,
     print_output=True,
 ):
+    """
+    Display the output of the duplicate detection in a suitable way.
+
+    Parameters:
+    - duplicates_found (int): Number of duplicates found.
+    - total_duplicates (int): Total number of true duplicates in the dataset.
+    - comparisons_made (int): Total number of comparisons made.
+    - df_size (int): Size of the DataFrame.
+    - predictions (list): List of duplicate predictions.
+    - true_labels (list): List of true duplicate labels.
+    - print_output (bool): Whether to print the output.
+
+    Returns:
+    tuple: Tuple of pair quality, pair completeness, F1*-score, F1-score, and fraction comparisons.
+    """
     if comparisons_made == 0 or total_duplicates == 0:
         print("No duplicates found")
         return 0, 0, 0, 0, 0
@@ -179,6 +251,15 @@ def summary(
 
 
 def bootstrap_sample(df):
+    """
+    Create a bootstrap sample from a DataFrame.
+
+    Parameters:
+    - df (pandas.DataFrame): DataFrame containing product information.
+
+    Returns:
+    tuple: Tuple containing train DataFrame, test DataFrame, and number of duplicates in train and test.
+    """
     train_set = list(
         set(np.random.randint(0, len(df) - 1, size=len(df)))
     )  # Drop non-unique duplicates
@@ -196,6 +277,12 @@ def bootstrap_sample(df):
 
 
 def visualize_results(results):
+    """
+    Visualize the results of a duplicate detection experiment.
+
+    Parameters:
+    - results (list): List of results for each combination of bands and rows.
+    """
     print(
         tabulate(
             results,

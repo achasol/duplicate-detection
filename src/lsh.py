@@ -9,6 +9,15 @@ from scipy.stats import wasserstein_distance
 
 
 def get_buckets(hashes):
+    """
+    Assign vectors to buckets based on their hash values.
+
+    Parameters:
+    - hashes (numpy.ndarray): Array of hash values for each vector.
+
+    Returns:
+    list: List of buckets, where each bucket contains indices of vectors sharing the same hash value.
+    """
     buckets = {}
     for index, hash in enumerate(hashes):
         hash_str = "".join(hash.astype(str))
@@ -21,6 +30,16 @@ def get_buckets(hashes):
 
 
 def cosine_locality_sensitive_hash(n_planes, vectors):
+    """
+    Apply cosine locality-sensitive hashing to vectors.
+
+    Parameters:
+    - n_planes (int): Number of random hyperplanes for hashing.
+    - vectors (numpy.ndarray): Input vectors.
+
+    Returns:
+    list: List of buckets, where each bucket contains indices of vectors with similar hash values.
+    """
     vector_dim = len(vectors[0])
 
     normal_vectors = np.random.randn(vector_dim, n_planes)
@@ -30,6 +49,16 @@ def cosine_locality_sensitive_hash(n_planes, vectors):
 
 
 def jaccard_similarity(embedding1, embedding2):
+    """
+    Calculate Jaccard similarity between two embeddings.
+
+    Parameters:
+    - embedding1 (numpy.ndarray): First embedding vector.
+    - embedding2 (numpy.ndarray): Second embedding vector.
+
+    Returns:
+    float: Jaccard similarity between the two embeddings.
+    """
     cm = np.zeros((2, 2), dtype=int)
 
     for a, p in zip(embedding1, embedding2):
@@ -39,6 +68,16 @@ def jaccard_similarity(embedding1, embedding2):
 
 
 def wasserstein_similarity(embedding1, embedding2):
+    """
+    Calculate Wasserstein similarity between two embeddings.
+
+    Parameters:
+    - embedding1 (numpy.ndarray): First embedding vector.
+    - embedding2 (numpy.ndarray): Second embedding vector.
+
+    Returns:
+    float: Wasserstein similarity between the two embeddings.
+    """
     hamming_distance = np.count_nonzero(embedding1 != embedding2)
     if hamming_distance == 0:
         return 1
@@ -47,6 +86,20 @@ def wasserstein_similarity(embedding1, embedding2):
 
 
 def detect_duplicates(df, buckets, embeddings, already_found, predictions, true_labels):
+    """
+    Detect duplicate pairs within buckets and update statistics.
+
+    Parameters:
+    - df (pandas.DataFrame): DataFrame containing product information.
+    - buckets (list): List of buckets containing indices of similar vectors.
+    - embeddings (numpy.ndarray): Embeddings of the vectors.
+    - already_found (dict): Dictionary to track already identified duplicates.
+    - predictions (list): List to store duplicate predictions.
+    - true_labels (list): List to store true duplicate labels.
+
+    Returns:
+    tuple: Tuple containing statistics on duplicates identified, comparisons made, and updated tracking information.
+    """
     true_duplicates = 0
     duplicates_identified = 0
     comparisons_made = 0
@@ -103,6 +156,18 @@ def detect_duplicates(df, buckets, embeddings, already_found, predictions, true_
 
 
 def repeated_minhash_lsh(num_bands, num_rows, embeddings, df):
+    """
+    Apply repeated MinHash Locality-Sensitive Hashing to identify duplicate pairs.
+
+    Parameters:
+    - num_bands (int): Number of bands for LSH.
+    - num_rows (int): Number of rows per band.
+    - embeddings (numpy.ndarray): Embeddings of the vectors.
+    - df (pandas.DataFrame): DataFrame containing product information.
+
+    Returns:
+    tuple: Tuple containing statistics on duplicates identified, comparisons made, and prediction information.
+    """
     duplicate_pairs_found = {}
     duplicates_identified = 0
     comparisons_made = 0
@@ -140,6 +205,20 @@ def run_experiment(
     total_duplicates,
     run_identifier,
 ):
+    """
+    Run an experiment with varying numbers of bands and rows, and record the results.
+
+    Parameters:
+    - df (pandas.DataFrame): DataFrame containing product information.
+    - embeddings (numpy.ndarray): Embeddings of the vectors.
+    - row_candidates (list): List of candidate values for the number of rows.
+    - band_candidates (list): List of candidate values for the number of bands.
+    - total_duplicates (int): Total number of true duplicates in the dataset.
+    - run_identifier (str): Identifier for the experiment run.
+
+    Returns:
+    list: List of results for each combination of bands and rows.
+    """
     results = []
 
     for num_bands in tqdm(band_candidates):
