@@ -33,7 +33,7 @@ def generate_minhash_signature_matrix(num_hashes, embeddings):
     numpy.ndarray: The MinHash signature matrix.
     """
     embeddings = embeddings.T
-    signature_matrix = np.matrix(np.ones((num_hashes, len(embeddings[0]))) * np.inf)
+    signature_matrix = np.array(np.ones((num_hashes, len(embeddings[0]))) * np.inf)
 
     for row in embeddings:
         hashed_row = []

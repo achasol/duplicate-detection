@@ -1,14 +1,14 @@
 # Scalable Duplicate Detection
 
-This repo contains my implementation for scalable detection of (near) duplicate webshop products.
-It is part of the course Computer science and business analytics at the Erasmus University.
+This repo contains my implementation for scalable detection method of (near) duplicate webshop products.
+It is part of the course Computer science and Business Analytics at the Erasmus University Rotterdam.
 
-The objective of this assignment is to find near duplicate products in a dataset
+The objective of this implementation is to find near duplicate products in a dataset
 without performing an exhaustive comparison of all pairs. Hence we are instructed
 to use a locality sensitive hashing (LSH) method to reduce the number of comparisons
 in an effective way.
 
-I use the json data of the tv products to create uniform representations.
+The key aspect of my approach is that, I use the json data of 1624 tv products to create uniform representations.
 In essence this boils down to extracting key features of the products
 using a variety of regex queries and then joining these features together.
 This yields a more dense and uniform representation of the product titles.
@@ -17,6 +17,9 @@ I then encode these representations using a one-hot-encoding based on
 n-grams of the titles. These one-hot-encoded dense titles are
 subsequently used as inputs to a minhashing implementation of
 LSH.
+
+For those products hashed to the same bucket I perform a comparison using
+their jaccard similarity to evaluate whether the products are duplicates.
 
 ## Running the experiment
 
@@ -53,6 +56,8 @@ Automated tests for key functions can be found in the tests folder.
 ## Personal Notes:
 
 MINHASHING WORKS
+
+DROP wasserstein distance does not really make sense?
 
 But do not forget to implement a similarity metric now using golden labels
 

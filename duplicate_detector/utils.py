@@ -4,7 +4,7 @@ import math
 import numpy as np
 from tabulate import tabulate
 from sklearn.metrics import f1_score
-from brands import get_brands
+from duplicate_detector.brands import get_brands
 import re
 
 

@@ -1,7 +1,7 @@
 import numpy as np
-from utils import bootstrap_sample, visualize_results, load_dataset
-from lsh import run_experiment
-from embeddings import one_hot_encode_n_shingles
+from duplicate_detector.utils import bootstrap_sample, visualize_results, load_dataset
+from duplicate_detector.lsh import run_experiment
+from duplicate_detector.embeddings import one_hot_encode_n_shingles
 from concurrent.futures import ProcessPoolExecutor
 from utils import process_results
 
