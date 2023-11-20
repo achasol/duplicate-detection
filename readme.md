@@ -28,18 +28,20 @@ python main.py
 
 ## Structure of the code
 
-The code is structured into several files. The entrypoint of the method is the main.py file.
-The minhash.py file contains a minhashing implementation, the lsh.py file contains the logic
-required to use minhashing to perform LSH and also keep track of metrics during
-an experiment. The utils.py file contains a number of utility functions including
-the function responsible for creating the dense title representations. The plots.py
-file uses the results from multiple bootstrap runs of the experiment to
-easily generate plots on key metrics.
+The code is structured into several files.
 
-The brands.py file is simply a container containing a python dict with
-all major tv brands extracted from wikipedia.
+1.  The entrypoint of the method is the main.py file.
+2.  The minhash.py file contains a minhashing implementation
+3.  The lsh.py file contains the logic required to use minhashing to perform LSH and also keep track of metrics during
+    an experiment.
+4.  The utils.py file contains a number of utility functions including the function responsible for creating the dense title representations.
+5.  The plots.py file uses the results from multiple bootstrap runs of the experiment to easily generate plots on key metrics.
 
-Notes:
+6.  The brands.py file is simply a container containing a python dict with
+    all major tv brands extracted from wikipedia.
+
+## Personal Notes:
+
 MINHASHING WORKS
 
 But do not forget to implement a similarity metric now using golden labels
