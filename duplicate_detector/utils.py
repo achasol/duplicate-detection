@@ -4,7 +4,7 @@ import math
 import numpy as np
 from tabulate import tabulate
 from sklearn.metrics import f1_score
-from duplicate_detector.brands import get_brands
+from .brands import get_brands
 import re
 
 
@@ -28,7 +28,7 @@ def process_results(all_results):
             "comparisons_fraction",
         ],
     )
-    df.to_csv(r"../results/bootstrap-runs.csv", index=None)
+    df.to_csv(r"./results/bootstrap-runs.csv", index=None)
 
 
 def load_dataset():
@@ -39,7 +39,7 @@ def load_dataset():
     pandas.DataFrame: Processed DataFrame containing TV product information.
     """
     # Load data from JSON file
-    file_path = r"../data/TVs-all-merged.json"
+    file_path = r"./data/TVs-all-merged.json"
     with open(file_path, "r") as file:
         products = json.load(file)
 

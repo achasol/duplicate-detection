@@ -1,14 +1,10 @@
 import pytest
-import numpy as np
 import pandas as pd
 
-# Assuming the functions are in a module called "duplicate_detection"
-
-from duplicate_detector.utils import (
+from ..utils import (
     identify_brand,
     find_brands,
     num_duplicates,
-    summary,
     bootstrap_sample,
     visualize_results,
 )

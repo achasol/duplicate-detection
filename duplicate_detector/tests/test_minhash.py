@@ -1,5 +1,5 @@
 import numpy as np
-from duplicate_detector.minhash import (
+from ..minhash import (
     hash_row,
     generate_minhash_signature_matrix,
     split_matrix_into_bands,

@@ -1,9 +1,7 @@
+from .utils import bootstrap_sample, visualize_results, load_dataset
+from .lsh import run_experiment
 import numpy as np
-from duplicate_detector.utils import bootstrap_sample, visualize_results, load_dataset
-from duplicate_detector.lsh import run_experiment
-from duplicate_detector.embeddings import one_hot_encode_n_shingles
-from concurrent.futures import ProcessPoolExecutor
-from utils import process_results
+from .embeddings import one_hot_encode_n_shingles
 
 
 def bootstrap_run(bootstrap_identifier):
@@ -26,8 +24,8 @@ def bootstrap_run(bootstrap_identifier):
     # train_product_embeddings
     test_product_embeddings = one_hot_encode_n_shingles(test_df["title"], 8)  # 8
 
-    row_candidates = range(1, 64)  # [25, 50]  # range(25,50)
-    band_candidates = range(1, 64)  # range(1, 3)
+    row_candidates = [20]  # range(1, 64)  # [25, 50]  # range(25,50)
+    band_candidates = [5]  # range(1, 64)  # range(1, 3)
 
     results = run_experiment(
         test_df,
@@ -53,15 +51,3 @@ def bootstrap_run_parallel(identifier):
     list: Results of the LSH experiment for the given parallel run.
     """
     return bootstrap_run(identifier)
-
-
-if __name__ == "__main__":
-    all_results = []
-
-    with ProcessPoolExecutor(max_workers=8) as executor:
-        # Use executor.map to run bootstrap_run in parallel
-        results_list = list(executor.map(bootstrap_run_parallel, range(20)))
-        for new_results in results_list:
-            all_results.extend(new_results)
-
-    process_results(all_results)

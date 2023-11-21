@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from duplicate_detector.lsh import (
+from ..lsh import (
     get_buckets,
     jaccard_similarity,
     wasserstein_similarity,

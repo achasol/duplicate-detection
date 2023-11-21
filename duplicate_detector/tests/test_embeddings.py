@@ -3,7 +3,7 @@ import numpy as np
 
 # Assuming the function is in a module called "encoding"
 
-from duplicate_detector.embeddings import one_hot_encode_n_shingles
+from ..embeddings import one_hot_encode_n_shingles
 
 
 def test_one_hot_encode_n_shingles():
