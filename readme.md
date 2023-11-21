@@ -39,7 +39,7 @@ pytest tests/
 
 ## Structure of the code
 
-The code is structured into several files.
+The source code is structured into several files and contained within the duplicate_detector module.
 
 1.  The entrypoint of the method is the main.py file.
 2.  The minhash.py file contains a minhashing implementation

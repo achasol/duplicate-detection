@@ -29,25 +29,6 @@ def get_buckets(hashes):
     return list(buckets.values())
 
 
-def cosine_locality_sensitive_hash(n_planes, vectors):
-    """
-    Apply cosine locality-sensitive hashing to vectors.
-
-    Parameters:
-    - n_planes (int): Number of random hyperplanes for hashing.
-    - vectors (numpy.ndarray): Input vectors.
-
-    Returns:
-    list: List of buckets, where each bucket contains indices of vectors with similar hash values.
-    """
-    vector_dim = len(vectors[0])
-
-    normal_vectors = np.random.randn(vector_dim, n_planes)
-    normal_vectors = normal_vectors / np.linalg.norm(normal_vectors)
-    hashes = (vectors @ normal_vectors > 0).astype(int)
-    return get_buckets(hashes)
-
-
 def jaccard_similarity(embedding1, embedding2):
     """
     Calculate Jaccard similarity between two embeddings.
