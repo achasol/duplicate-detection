@@ -105,10 +105,11 @@ def load_dataset():
     minimal_product_df["dense_title"] = cols.apply(
         lambda row: "".join(str(e) for e in row), axis=1
     )
+
     minimal_product_df = minimal_product_df.fillna(" ")
     minimal_product_df["title"] = minimal_product_df[
         ["brand", "resolution", "refresh_rate", "weight", "dimensions"]
-    ].apply(lambda row: " ".join(map(str, row)), axis=1)
+    ].apply(lambda row: "|".join(map(str, row)), axis=1)
 
     return minimal_product_df
 
@@ -224,7 +225,7 @@ def summary(
     )
     f1score = f1_score(true_labels, predictions)
 
-    fraction_comparisons = round(comparisons_made / math.comb(df_size, 2), 12)
+    fraction_comparisons = comparisons_made / math.comb(df_size, 2)
 
     if print_output:
         print(f"Total number of duplicates: {total_duplicates}")

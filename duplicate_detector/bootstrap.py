@@ -7,10 +7,11 @@ from concurrent.futures import ProcessPoolExecutor
 
 def run():
     all_results = []
+    num_bootstraps = 50
 
     with ProcessPoolExecutor(max_workers=8) as executor:
         # Use executor.map to run bootstrap_run in parallel
-        results_list = list(executor.map(bootstrap_run_parallel, range(8)))
+        results_list = list(executor.map(bootstrap_run_parallel, range(num_bootstraps)))
         for new_results in results_list:
             all_results.extend(new_results)
 
@@ -35,10 +36,10 @@ def bootstrap_run(bootstrap_identifier):
     )
 
     # train_product_embeddings
-    test_product_embeddings = one_hot_encode_n_shingles(test_df["title"], 8)  # 8
+    test_product_embeddings = one_hot_encode_n_shingles(test_df["title"], 12)  # 8
 
-    row_candidates = [20]  # range(1, 64)  # [25, 50]  # range(25,50)
-    band_candidates = [5]  # range(1, 64)  # range(1, 3)
+    row_candidates = [2, 5, 10]  # range(1, 64)  # [25, 50]  # range(25,50)
+    band_candidates = [100]  # range(1, 64)  # range(1, 3)
 
     results = run_experiment(
         test_df,

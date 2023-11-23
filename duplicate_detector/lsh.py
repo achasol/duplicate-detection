@@ -5,7 +5,8 @@ from tqdm import tqdm
 from numba import jit
 
 from .minhash import generate_minhashes
-from scipy.stats import wasserstein_distance
+
+from .cosinehash import generate_cosine_hashes
 
 
 def get_buckets(hashes):
@@ -29,6 +30,18 @@ def get_buckets(hashes):
     return list(buckets.values())
 
 
+def cosine_similarity(embedding1, embedding2):
+    dot_product = np.dot(embedding1, embedding1)
+    norm1 = np.linalg.norm(embedding1)
+    norm2 = np.linalg.norm(embedding2)
+
+    if norm1 == 0 or norm1 == 0:
+        return 0
+
+    similarity = dot_product / (norm1 * norm2)
+    return similarity
+
+
 def jaccard_similarity(embedding1, embedding2):
     """
     Calculate Jaccard similarity between two embeddings.
@@ -45,10 +58,13 @@ def jaccard_similarity(embedding1, embedding2):
     for a, p in zip(embedding1, embedding2):
         cm[a, p] += 1
 
+    if (cm[1, 1] + cm[0, 1] + cm[1, 0]) == 0:
+        return 0
+
     return cm[1, 1] / (cm[1, 1] + cm[0, 1] + cm[1, 0])
 
 
-def wasserstein_similarity(embedding1, embedding2):
+def hamming_similarity(embedding1, embedding2):
     """
     Calculate Wasserstein similarity between two embeddings.
 
@@ -62,8 +78,8 @@ def wasserstein_similarity(embedding1, embedding2):
     hamming_distance = np.count_nonzero(embedding1 != embedding2)
     if hamming_distance == 0:
         return 1
-    wasserstein_distance_value = wasserstein_distance(embedding1, embedding2)
-    return wasserstein_distance_value / hamming_distance
+
+    return hamming_distance / len(embedding1)
 
 
 def detect_duplicates(df, buckets, embeddings, already_found, predictions, true_labels):
@@ -108,8 +124,10 @@ def detect_duplicates(df, buckets, embeddings, already_found, predictions, true_
             product2 = embeddings[product2_index]
 
             prediction = (
-                wasserstein_similarity(product1, product2) >= 0.9
+                hamming_similarity(product1, product2) >= 0.9
                 and jaccard_similarity(product1, product2) >= 0.9
+                # cosine_similarity(product1, product2)
+                # >= 0.9
             )
 
             is_duplicate = df.iloc[product1_index].id == df.iloc[product2_index].id
@@ -229,7 +247,7 @@ def run_experiment(
 
             results.append(
                 [
-                    round(elem, 3)
+                    round(elem, 12)
                     for elem in [
                         run_identifier,
                         num_bands,
