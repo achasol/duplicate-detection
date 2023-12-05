@@ -2,7 +2,6 @@ import numpy as np
 from itertools import combinations
 from .utils import summary
 from tqdm import tqdm
-from numba import jit
 
 from .minhash import generate_minhashes
 

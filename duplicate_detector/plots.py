@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 sns.set_theme(style="white", palette="tab10")
 
-data = pd.read_csv(r"../results/bootstrap-runs.csv")
+data = pd.read_csv(r"../results/bootstrap-runs-50-simhash-90.csv")
 
 # TODO take average over bootstraps here
 
