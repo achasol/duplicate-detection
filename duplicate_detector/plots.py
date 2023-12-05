@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 sns.set_theme(style="white", palette="tab10")
 
-data = pd.read_csv(r"../results/bootstrap-runs.csv")
+data = pd.read_csv(r"../results/bootstrap-runs-50-simhash-90.csv")
 
 # TODO take average over bootstraps here
 
@@ -32,18 +32,18 @@ data["bin"] = pd.cut(data["comparisons_fraction"], bins=bin_edges, right=False)
 # Group by the 'bin' column and calculate some summary statistics
 grouped_df = data.groupby("bin").agg(
     {
-        "f1_score": "mean",
-        "f1*_score": "mean",
-        "pair_quality": "mean",
-        "pair_completeness": "mean",
-        "comparisons_fraction": "median",
+        "f1_score": ["mean", "std"],
+        "f1*_score": ["mean", "std"],
+        "pair_quality": ["mean", "std"],
+        "pair_completeness": ["mean", "std"],
+        "comparisons_fraction": ["mean", "std"],
     }
 )
 
 
 grouped_df = grouped_df.dropna()
 
-print(grouped_df)
+print(grouped_df.to_string())
 
 # Create a single figure with 2x2 subplots
 fig, axs = plt.subplots(2, 2, figsize=(10, 8))

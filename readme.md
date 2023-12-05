@@ -52,20 +52,3 @@ The source code is structured into several files and contained within the duplic
     all major tv brands extracted from wikipedia.
 
 Automated tests for key functions can be found in the duplicate_detector/tests folder.
-
-## Personal Notes:
-
-MINHASHING WORKS
-
-DROP wasserstein distance does not really make sense?
-
-But do not forget to implement a similarity metric now using golden labels
-
-Impove on representation
-Tune MinHashLSH (look at how it seems to be hashing )
-Run to get results
-Write tests and comments (organize code)
-
-Write paper
-
-Try Wasserstein distance instead of Jaccard similarity

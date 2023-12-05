@@ -1,5 +1,6 @@
 import numpy as np
 from numba import njit
+import hashlib
 
 # https://planetmath.org/goodhashtableprimes
 
@@ -17,7 +18,7 @@ def hash_row(row, seed):
     numpy.ndarray: The hashed row.
     """
     a, b = seed
-    c = 402653189
+    c = 393241
     return np.mod(a + b * row, c)
 
 
@@ -98,19 +99,22 @@ def lsh_minhash(num_bands, num_rows, embeddings):
     """
     num_hashes = num_bands * num_rows
     signatures = generate_minhash_signature_matrix(num_hashes, embeddings)
-    buckets = [{} for band in range(num_bands * num_rows)]
+    buckets = [{} for band in range(num_bands)]
 
     candidates = split_matrix_into_bands(signatures, num_bands, num_rows)
 
     for index, candidate in enumerate(candidates):
         for embedding_index, row in enumerate(candidate.T):
-            hash_str = hash(str(row))
+            hasher = hashlib.sha512()
+            hasher.update(str(row).encode("utf-8"))
+            hash_str = hasher.hexdigest()
             if str(hash_str) in buckets[index]:
                 buckets[index][str(hash_str)].append(embedding_index)
             else:
                 buckets[index][str(hash_str)] = [embedding_index]
 
     unique_buckets = set()
+
     for bucket in buckets:
         for value in bucket.values():
             if len(value) == 1:
@@ -120,13 +124,16 @@ def lsh_minhash(num_bands, num_rows, embeddings):
     bucket_sizes = [len(bucket) for bucket in unique_buckets]
 
     # Drop the 10% largest buckets
-    threshold = np.percentile(bucket_sizes, 85)  # 85
+    threshold = np.percentile(bucket_sizes, 100)  # 85
 
     top_indices = np.where(bucket_sizes >= threshold)[0]
     unique_buckets = list(unique_buckets)
+    # TODO figure out weakness of minhash implementation
+    # print(sorted([len(bucket) for bucket in unique_buckets]))
     unique_trimmed_buckets = [
         value for index, value in enumerate(unique_buckets) if index not in top_indices
     ]
+    # print(sorted([len(bucket) for bucket in unique_trimmed_buckets]))
     return unique_trimmed_buckets
 
 
